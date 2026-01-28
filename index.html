@@ -84,6 +84,7 @@
                     <div id="news-overlay-1" class="news-overlay">
                         <i class="fas fa-camera"></i> Upload Image
                     </div>
+                    <button id="news-delete-1" class="news-delete" title="Remove Image"><i class="fas fa-trash"></i></button>
                 </div>
 
                 <!-- Slot 2 -->
@@ -96,6 +97,7 @@
                     <div id="news-overlay-2" class="news-overlay">
                         <i class="fas fa-camera"></i> Upload Image
                     </div>
+                    <button id="news-delete-2" class="news-delete" title="Remove Image"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         </div>
@@ -193,6 +195,7 @@
                     <a href="https://wa.me/254746558597" class="btn btn-outline" style="border-color: #0D47A1; color: #0D47A1; margin-top: 1.5rem; display: inline-block; padding: 0.8rem 2rem;">Chat with Franklin</a>
                     <button id="edit-profile-btn" class="btn btn-outline" style="margin-top: 1.5rem; margin-left:10px; border-color: #555; color: #555; display: none;">✏️ Edit Profile</button>
                     <button id="save-profile-btn" class="btn btn-primary" style="margin-top: 1.5rem; margin-left:10px; display: none;">💾 Save Changes</button>
+                    <button id="change-pin-btn" class="btn btn-outline" style="margin-top: 1.5rem; margin-left:10px; border-color: #d32f2f; color: #d32f2f; display: none;">🔒 Change PIN</button>
                 </div>
             </div>
         </div>
@@ -269,24 +272,24 @@
     </div>
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
+    <script type="module">
+        import { db, storage, doc, getDoc, setDoc, ref, uploadString, getDownloadURL, deleteObject } from './js/firebase_init.js';
+
+        document.addEventListener('DOMContentLoaded', async () => {
             // --- Mobile Menu Logic ---
             const toggle = document.querySelector('.mobile-toggle');
             const navLinks = document.querySelector('.nav-links');
-            
             if(toggle && navLinks) {
                 toggle.addEventListener('click', () => {
                     navLinks.classList.toggle('active');
                     toggle.classList.toggle('active');
-                    // Force display for debugging
-                    console.log('Toggle clicked', navLinks.className);
                 });
             }
 
-            // --- Profile Editing Logic (CMS Lite) ---
+            // --- Elements ---
             const editBtn = document.getElementById('edit-profile-btn');
             const saveBtn = document.getElementById('save-profile-btn');
+            const changePinBtn = document.getElementById('change-pin-btn');
             const fName = document.getElementById('founder-name');
             const fRole = document.getElementById('founder-role');
             const fBio  = document.getElementById('founder-bio');
@@ -294,72 +297,71 @@
             const fUpload = document.getElementById('founder-upload');
             const imgOverlay = document.getElementById('img-overlay');
 
-            // Load saved data
-            if(localStorage.getItem('founderData')) {
-                const data = JSON.parse(localStorage.getItem('founderData'));
-                if(fName) fName.innerText = data.name;
-                if(fRole) fRole.innerText = data.role;
-                if(fBio) fBio.innerHTML = data.bio;
-                if(fImg && data.img) fImg.src = data.img;
-            }
-
-            // --- News/Updates Logic ---
             const news1Img = document.getElementById('news-img-1');
             const news2Img = document.getElementById('news-img-2');
             const news1Ph  = document.getElementById('news-placeholder-1');
             const news2Ph  = document.getElementById('news-placeholder-2');
-            
-            // Load News Data
-            const loadNews = () => {
-                const storedNews = JSON.parse(localStorage.getItem('newsData')) || {};
-                if(storedNews.slot1) {
-                    if(news1Img) { news1Img.src = storedNews.slot1; news1Img.style.display = 'block'; }
-                    if(news1Ph) news1Ph.style.display = 'none';
-                }
-                if(storedNews.slot2) {
-                    if(news2Img) { news2Img.src = storedNews.slot2; news2Img.style.display = 'block'; }
-                    if(news2Ph) news2Ph.style.display = 'none';
-                }
-            };
-            loadNews();
 
-            // Handle News Uploads
-            const handleNewsUpload = (inputId, imgId, phId, slotKey) => {
-                const input = document.getElementById(inputId);
-                const img = document.getElementById(imgId);
-                const ph = document.getElementById(phId);
+            // --- Load Data from Firebase ---
+            try {
+                // Load Founder Profile
+                const founderSnap = await getDoc(doc(db, "cms", "founder"));
+                if (founderSnap.exists()) {
+                    const data = founderSnap.data();
+                    if(fName) fName.innerText = data.name || "Franklin Bett";
+                    if(fRole) fRole.innerText = data.role || "Data Analyst & Education Consultant";
+                    if(fBio) fBio.innerHTML = data.bio || fBio.innerHTML; // Fallback
+                    if(fImg && data.imgUrl) fImg.src = data.imgUrl;
+                }
+
+                // Load News
+                const newsSnap = await getDoc(doc(db, "cms", "news"));
+                if (newsSnap.exists()) {
+                    const data = newsSnap.data();
+                    if(data.slot1) {
+                        if(news1Img) { news1Img.src = data.slot1; news1Img.style.display = 'block'; }
+                        if(news1Ph) news1Ph.style.display = 'none';
+                    }
+                    if(data.slot2) {
+                        if(news2Img) { news2Img.src = data.slot2; news2Img.style.display = 'block'; }
+                        if(news2Ph) news2Ph.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading data:", error);
+                // Fail gracefully often means simpler console log here
+            }
+
+            // --- Admin Mode Logic ---
+            window.enableAdminMode = async function() {
+                // 1. Get PIN from Firebase (or default to 1234 if not set)
+                let storedPin = "1234";
+                try {
+                    const pinSnap = await getDoc(doc(db, "cms", "config"));
+                    if(pinSnap.exists() && pinSnap.data().pin) {
+                        storedPin = pinSnap.data().pin;
+                    }
+                } catch(e) {
+                    console.log("Config not found, using default.");
+                }
+
+                const pass = prompt("Enter Admin PIN:", "");
                 
-                if(input) {
-                    input.addEventListener('change', (e) => {
-                        const file = e.target.files[0];
-                        if(file) {
-                            const reader = new FileReader();
-                            reader.onload = function(event) {
-                                const result = event.target.result;
-                                if(img) { img.src = result; img.style.display = 'block'; }
-                                if(ph) ph.style.display = 'none';
-                                
-                                // Save to storage
-                                const stored = JSON.parse(localStorage.getItem('newsData')) || {};
-                                stored[slotKey] = result;
-                                localStorage.setItem('newsData', JSON.stringify(stored));
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    });
+                if(pass === storedPin) {
+                    enableEditingUI();
+                    alert("Admin Mode Enabled.");
+                } else {
+                    alert("Incorrect PIN.");
                 }
             };
 
-            handleNewsUpload('news-upload-1', 'news-img-1', 'news-placeholder-1', 'slot1');
-            handleNewsUpload('news-upload-2', 'news-img-2', 'news-placeholder-2', 'slot2');
-
-            // Edit Mode Toggle
-            if(editBtn) {
-                editBtn.addEventListener('click', () => {
-                    const isEditing = fName.isContentEditable;
-                    
-                    if(!isEditing) {
-                        // Enter Edit Mode
+            function enableEditingUI() {
+                if(editBtn) editBtn.style.display = 'inline-block';
+                if(changePinBtn) changePinBtn.style.display = 'inline-block';
+                
+                // Allow Founder Edit
+                if(editBtn) {
+                    editBtn.onclick = () => {
                         [fName, fRole, fBio].forEach(el => {
                             if(el) {
                                 el.contentEditable = "true";
@@ -369,100 +371,199 @@
                         });
                         editBtn.style.display = 'none';
                         saveBtn.style.display = 'inline-block';
-                        imgOverlay.style.display = 'flex';
                         
-                        // Allow image click
-                        imgOverlay.addEventListener('click', () => fUpload.click());
-                    }
-                });
+                        if(imgOverlay) {
+                            imgOverlay.style.display = 'flex';
+                            imgOverlay.onclick = () => fUpload.click();
+                        }
+                    };
+                }
+
+                // Allow Founder Save
+                if(saveBtn) {
+                    saveBtn.onclick = async () => {
+                        saveBtn.innerText = "Saving...";
+                        try {
+                            let imgUrl = fImg.src;
+                            // Check if image is base64 (new upload)
+                            if(imgUrl.startsWith('data:')) {
+                                // Re-compress to be safe
+                                // Note: We rely on the raw src if it's already set, 
+                                // but ideally we should track the file. 
+                                // For simplicity, we assume the user just selected a file 
+                                // or we can re-compress the src if needed.
+                                // Actually, let's just save the string. 
+                                // Since we don't have the file object here easily unless we track it 
+                                // globally, we trust the src is small enough OR we act smart:
+                            }
+
+                            await setDoc(doc(db, "cms", "founder"), {
+                                name: fName.innerText,
+                                role: fRole.innerText,
+                                bio: fBio.innerHTML,
+                                imgUrl: imgUrl
+                            }, { merge: true });
+
+                            // UI Reset
+                            [fName, fRole, fBio].forEach(el => {
+                                el.contentEditable = "false";
+                                el.style.border = "none";
+                                el.style.padding = "0";
+                            });
+                            saveBtn.style.display = 'none';
+                            editBtn.style.display = 'inline-block';
+                            if(imgOverlay) imgOverlay.style.display = 'none';
+                            saveBtn.innerText = "💾 Save Changes";
+                            alert("Profile Saved to Database!");
+                        } catch(e) {
+                            console.error(e);
+                            alert("Error saving profile: " + e.message);
+                            saveBtn.innerText = "💾 Save Changes";
+                        }
+                    };
+                }
+
+                // Allow PIN Change
+                if(changePinBtn) {
+                    changePinBtn.onclick = async () => {
+                        const newPin = prompt("Enter new 4-digit PIN:", "");
+                        if(newPin && newPin.length >= 4) {
+                            await setDoc(doc(db, "cms", "config"), { pin: newPin }, { merge: true });
+                            alert("PIN Updated Securely!");
+                        }
+                    };
+                }
+
+                // Allow News Uploads
+                setupNewsUpload('news-upload-1', 'news-overlay-1', 'news-img-1', 'slot1');
+                setupNewsUpload('news-upload-2', 'news-overlay-2', 'news-img-2', 'slot2');
+
+                // Allow News Deletes
+                document.getElementById('news-delete-1').style.display = 'flex';
+                document.getElementById('news-delete-2').style.display = 'flex';
+                
+                setupNewsDelete('news-delete-1', 'news-img-1', 'news-placeholder-1', 'slot1');
+                setupNewsDelete('news-delete-2', 'news-img-2', 'news-placeholder-2', 'slot2');
             }
 
-            // Handle Image Upload
+
+            // Helper: Resize Image (To fit in Firestore directly)
+            const resizeImage = (file, maxWidth) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            if (width > maxWidth) {
+                                height *= maxWidth / width;
+                                width = maxWidth;
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            // Compress to JPEG 0.7 quality
+                            resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            // Helper: News Upload (Using Firestore Storage)
+            function setupNewsUpload(inputId, overlayId, imgId, slotKey) {
+                const overlay = document.getElementById(overlayId);
+                const input = document.getElementById(inputId);
+                const img = document.getElementById(imgId);
+                const phId = imgId.replace('img', 'placeholder');
+                const ph = document.getElementById(phId);
+
+                if(overlay) {
+                    overlay.style.display = 'flex';
+                    overlay.onclick = () => input.click();
+                }
+
+                if(input) {
+                    input.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if(file) {
+                            try {
+                                alert("Compressing and Uploading...");
+                                const base64String = await resizeImage(file, 800); // Max width 800px
+
+                                // Show preview
+                                img.src = base64String;
+                                img.style.display = 'block';
+                                if(ph) ph.style.display = 'none';
+
+                                // Upload to Firestore directly
+                                await setDoc(doc(db, "cms", "news"), {
+                                    [slotKey]: base64String
+                                }, { merge: true });
+                                
+                                alert("Poster Uploaded Successfully!");
+                            } catch (e) {
+                                console.error(e);
+                                alert("Upload failed: " + e.message);
+                            }
+                        }
+                    };
+                }
+            }
+
+
+            // Helper: News Delete
+            function setupNewsDelete(btnId, imgId, phId, slotKey) {
+                const btn = document.getElementById(btnId);
+                if(btn) {
+                    btn.onclick = async (e) => {
+                        e.stopPropagation();
+                        if(confirm("Remove this poster?")) {
+                            try {
+                                const img = document.getElementById(imgId);
+                                const ph = document.getElementById(phId);
+                                
+                                // UI Reset
+                                if(img) { img.src = ""; img.style.display = 'none'; }
+                                if(ph) ph.style.display = 'block';
+
+                                // DB Update
+                                // Firestore deleteField is cleaner, but setting to null works too
+                                await setDoc(doc(db, "cms", "news"), {
+                                    [slotKey]: ""
+                                }, { merge: true });
+
+                                alert("Removed!");
+                            } catch(e) {
+                                console.error(e);
+                            }
+                        }
+                    };
+                }
+            }
+
+            // Helper: Handle Founder Image Preview (Compress immediately)
             if(fUpload) {
-                fUpload.addEventListener('change', (e) => {
+                fUpload.addEventListener('change', async (e) => {
                     const file = e.target.files[0];
                     if(file) {
-                        const reader = new FileReader();
-                        reader.onload = function(event) {
-                            fImg.src = event.target.result;
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            }
-
-            // Save Changes
-            if(saveBtn) {
-                saveBtn.addEventListener('click', () => {
-                    const data = {
-                        name: fName.innerText,
-                        role: fRole.innerText,
-                        bio: fBio.innerHTML,
-                        img: fImg.src
-                    };
-                    
-                    localStorage.setItem('founderData', JSON.stringify(data));
-                    
-                    // Exit Edit Mode
-                    [fName, fRole, fBio].forEach(el => {
-                        if(el) {
-                            el.contentEditable = "false";
-                            el.style.border = "none";
-                            el.style.padding = "0";
+                        try {
+                            const base64String = await resizeImage(file, 600); // 600px is enough for profile
+                            fImg.src = base64String;
+                        } catch(e) {
+                            alert("Error processing image");
                         }
-                    });
-                    saveBtn.style.display = 'none';
-                    editBtn.style.display = 'inline-block';
-                    imgOverlay.style.display = 'none';
-                    
-                    alert("Profile Saved!");
+                    }
                 });
             }
         });
-
-        // Enable Admin (Global Scope for onclick)
-        window.enableAdminMode = function() {
-            // Confirmation for safety
-            const pass = prompt("Enter Admin PIN (Default: 1234):", "");
-            if(pass === "1234") {
-                const editBtn = document.getElementById('edit-profile-btn');
-                const saveBtn = document.getElementById('save-profile-btn');
-                const fName = document.getElementById('founder-name');
-                const fRole = document.getElementById('founder-role');
-                const fBio  = document.getElementById('founder-bio');
-                const imgOverlay = document.getElementById('img-overlay');
-                const fUpload = document.getElementById('founder-upload');
-
-                if(editBtn) editBtn.style.display = 'inline-block';
-                
-                // Auto-enter edit mode for immediate feedback
-                 [fName, fRole, fBio].forEach(el => {
-                    if(el) {
-                        el.contentEditable = "true";
-                        el.style.border = "1px dashed #ccc";
-                        el.style.padding = "5px";
-                    }
-                });
-                if(editBtn) editBtn.style.display = 'none';
-                if(saveBtn) saveBtn.style.display = 'inline-block';
-                
-                if(imgOverlay) {
-                    imgOverlay.style.display = 'flex';
-                    imgOverlay.addEventListener('click', () => fUpload.click());
-                }
-
-                // Enable News Edit Overlays
-                document.getElementById('news-overlay-1').style.display = 'flex';
-                document.getElementById('news-overlay-1').addEventListener('click', () => document.getElementById('news-upload-1').click());
-                
-                document.getElementById('news-overlay-2').style.display = 'flex';
-                document.getElementById('news-overlay-2').addEventListener('click', () => document.getElementById('news-upload-2').click());
-
-                alert("Admin Mode Enabled: You can now edit the text and image.");
-            } else {
-                alert("Incorrect PIN.");
-            }
-        }
     </script>
 </body>
 </html>
