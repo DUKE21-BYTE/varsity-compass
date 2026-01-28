@@ -362,6 +362,13 @@
                 // Allow Founder Edit
                 if(editBtn) {
                     editBtn.onclick = () => {
+                         // Explicitly re-select elements to be safe
+                        const fName = document.getElementById('founder-name');
+                        const fRole = document.getElementById('founder-role');
+                        const fBio  = document.getElementById('founder-bio');
+                        const fUpload = document.getElementById('founder-upload');
+                        const imgOverlay = document.getElementById('img-overlay');
+
                         [fName, fRole, fBio].forEach(el => {
                             if(el) {
                                 el.contentEditable = "true";
@@ -370,11 +377,11 @@
                             }
                         });
                         editBtn.style.display = 'none';
-                        saveBtn.style.display = 'inline-block';
+                        if(saveBtn) saveBtn.style.display = 'inline-block';
                         
                         if(imgOverlay) {
                             imgOverlay.style.display = 'flex';
-                            imgOverlay.onclick = () => fUpload.click();
+                            imgOverlay.onclick = () => { if(fUpload) fUpload.click(); };
                         }
                     };
                 }
