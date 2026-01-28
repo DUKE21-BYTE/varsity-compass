@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Varsity Compass | Engineer Your Future</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <a href="index.html"><img src="images/logo.png" alt="Varsity Compass Logo" style="height: 70px;"></a>
+            </div>
+            
+            <button class="mobile-toggle" aria-label="Toggle Navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <ul class="nav-links">
+                <li><a href="index.html#services">Services</a></li>
+                <li><a href="#predictor" class="active">Predictor Tool</a></li>
+                <li><a href="index.html#founder">About</a></li>
+                <li><a href="https://wa.me/254746558597?text=I%20want%20to%20book%20a%20session%20for%20application%20support" class="btn-nav" style="background: var(--accent-green); color: white !important; border-color: var(--accent-green);">Book a Session</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Predictor Tool -->
+    <section id="predictor" class="predictor-section" style="min-height: 80vh; padding-top: 2rem;">
+        <div class="container">
+            <div class="tool-header">
+                <h2>The Compass Predictor 2026</h2>
+                <p>Enter your KCSE grades to generate your Weighted Cluster Points (WCP) instantly.</p>
+            </div>
+            
+            <div class="calculator-card">
+                <form id="gradeForm" onsubmit="event.preventDefault(); predictCourses();">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Mathematics</label>
+                            <select id="math" required>
+                                <option value="" disabled selected>Select Grade</option>
+                                <option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option><option value="D+">D+</option><option value="D">D</option><option value="D-">D-</option><option value="E">E</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>English</label>
+                            <select id="eng" required><option value="" disabled selected>Select Grade</option><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option><option value="D+">D+</option><option value="D">D</option><option value="D-">D-</option><option value="E">E</option></select>
+                        </div>
+                        <div class="input-group">
+                            <label>Kiswahili</label>
+                            <select id="kisw" required><option value="" disabled selected>Select Grade</option><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option><option value="D+">D+</option><option value="D">D</option><option value="D-">D-</option><option value="E">E</option></select>
+                        </div>
+                        <div class="input-group">
+                            <label>Chemistry</label>
+                            <select id="chem" required><option value="" disabled selected>Select Grade</option><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option><option value="D+">D+</option><option value="D">D</option><option value="D-">D-</option><option value="E">E</option></select>
+                        </div>
+                        <div class="input-group">
+                            <label>Biology</label>
+                            <select id="bio"><option value="">Not Taken</option><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option><option value="D+">D+</option><option value="D">D</option><option value="D-">D-</option><option value="E">E</option></select>
+                        </div>
+                        <div class="input-group">
+                            <label>Physics</label>
+                            <select id="phy"><option value="">Not Taken</option><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option><option value="D+">D+</option><option value="D">D</option><option value="D-">D-</option><option value="E">E</option></select>
+                        </div>
+                        <div class="input-group">
+                            <label>History/Geog/CRE</label>
+                            <select id="hum1"><option value="">Not Taken</option><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option><option value="D+">D+</option><option value="D">D</option><option value="D-">D-</option><option value="E">E</option></select>
+                        </div>
+                        <div class="input-group">
+                            <label>Best Technical/Other</label>
+                            <select id="tech1"><option value="">Not Taken</option><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option><option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option><option value="D+">D+</option><option value="D">D</option><option value="D-">D-</option><option value="E">E</option></select>
+                        </div>
+                        <div class="input-group" style="grid-column: 1 / -1;">
+                            <label>How may we reach out to you? (Phone / Email)</label>
+                            <input type="text" id="contact_info" placeholder="e.g. 0712345678 or email@example.com" style="width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-full" style="background-color: var(--highlight-gold); color: var(--primary-blue); font-weight: bold;">Analyze My Chances</button>
+                </form>
+            </div>
+
+            <div id="results-area" class="results-hidden">
+                </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3>Varsity Compass</h3>
+                    <p>Your True North in Education.</p>
+                </div>
+                <div class="socials-list">
+                    <a href="https://tiktok.com/@varsity.compass.ke" target="_blank" class="social-icon"><i class="fab fa-tiktok"></i></a>
+                    <a href="https://youtube.com/@varsitycompasske" target="_blank" class="social-icon"><i class="fab fa-youtube"></i></a>
+                    <a href="https://instagram.com/varsity.compasss.ke" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    <a href="https://facebook.com/profile.php?id=61587312115383" target="_blank" class="social-icon"><i class="fab fa-facebook"></i></a>
+                    <a href="https://whatsapp.com/channel/0029VaqrCu07z4klGBuGtM47" target="_blank" class="social-icon"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            <p class="copyright">&copy; 2026 Varsity Compass. All Rights Reserved.</p>
+            <div style="margin-top: 10px; font-size: 0.8rem;">
+                <a href="#" onclick="event.preventDefault(); enableAdminMode();" style="color: rgba(255,255,255,0.3); text-decoration: none;">Admin Login</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Sticky Mobile Footer -->
+    <div class="mobile-footer">
+        <a href="https://wa.me/254746558597?text=I%20want%20to%20book%20a%20session" class="btn-whatsapp-full">Book a Session (WhatsApp)</a>
+    </div>
+
+    <script src="js/courses_data.js"></script>
+    <script src="js/predictor.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Mobile Menu Logic ---
+            const toggle = document.querySelector('.mobile-toggle');
+            const navLinks = document.querySelector('.nav-links');
+            
+            if(toggle && navLinks) {
+                toggle.addEventListener('click', () => {
+                    navLinks.classList.toggle('active');
+                    toggle.classList.toggle('active');
+                    // Force display for debugging
+                    console.log('Toggle clicked', navLinks.className);
+                });
+            }
+
+            // --- Profile Editing Logic (CMS Lite) ---
+            const editBtn = document.getElementById('edit-profile-btn');
+            const saveBtn = document.getElementById('save-profile-btn');
+            const fName = document.getElementById('founder-name');
+            const fRole = document.getElementById('founder-role');
+            const fBio  = document.getElementById('founder-bio');
+            const fImg  = document.getElementById('founder-img');
+            const fUpload = document.getElementById('founder-upload');
+            const imgOverlay = document.getElementById('img-overlay');
+
+            // Load saved data
+            if(localStorage.getItem('founderData')) {
+                const data = JSON.parse(localStorage.getItem('founderData'));
+                if(fName) fName.innerText = data.name;
+                if(fRole) fRole.innerText = data.role;
+                if(fBio) fBio.innerHTML = data.bio;
+                if(fImg && data.img) fImg.src = data.img;
+            }
+
+            // Edit Mode Toggle
+            if(editBtn) {
+                editBtn.addEventListener('click', () => {
+                    const isEditing = fName.isContentEditable;
+                    
+                    if(!isEditing) {
+                        // Enter Edit Mode
+                        [fName, fRole, fBio].forEach(el => {
+                            if(el) {
+                                el.contentEditable = "true";
+                                el.style.border = "1px dashed #ccc";
+                                el.style.padding = "5px";
+                            }
+                        });
+                        editBtn.style.display = 'none';
+                        saveBtn.style.display = 'inline-block';
+                        imgOverlay.style.display = 'flex';
+                        
+                        // Allow image click
+                        imgOverlay.addEventListener('click', () => fUpload.click());
+                    }
+                });
+            }
+
+            // Handle Image Upload
+            if(fUpload) {
+                fUpload.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if(file) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            fImg.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            // Save Changes
+            if(saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    const data = {
+                        name: fName.innerText,
+                        role: fRole.innerText,
+                        bio: fBio.innerHTML,
+                        img: fImg.src
+                    };
+                    
+                    localStorage.setItem('founderData', JSON.stringify(data));
+                    
+                    // Exit Edit Mode
+                    [fName, fRole, fBio].forEach(el => {
+                        if(el) {
+                            el.contentEditable = "false";
+                            el.style.border = "none";
+                            el.style.padding = "0";
+                        }
+                    });
+                    saveBtn.style.display = 'none';
+                    editBtn.style.display = 'inline-block';
+                    imgOverlay.style.display = 'none';
+                    
+                    alert("Profile Saved!");
+                });
+            }
+        });
+
+        // Enable Admin (Global Scope for onclick)
+        window.enableAdminMode = function() {
+            // Confirmation for safety
+            const pass = prompt("Enter Admin PIN (Default: 1234):", "");
+            if(pass === "1234") {
+                const editBtn = document.getElementById('edit-profile-btn');
+                const saveBtn = document.getElementById('save-profile-btn');
+                const fName = document.getElementById('founder-name');
+                const fRole = document.getElementById('founder-role');
+                const fBio  = document.getElementById('founder-bio');
+                const imgOverlay = document.getElementById('img-overlay');
+                const fUpload = document.getElementById('founder-upload');
+
+                if(editBtn) editBtn.style.display = 'inline-block';
+                
+                // Auto-enter edit mode for immediate feedback
+                 [fName, fRole, fBio].forEach(el => {
+                    if(el) {
+                        el.contentEditable = "true";
+                        el.style.border = "1px dashed #ccc";
+                        el.style.padding = "5px";
+                    }
+                });
+                if(editBtn) editBtn.style.display = 'none';
+                if(saveBtn) saveBtn.style.display = 'inline-block';
+                if(imgOverlay) {
+                    imgOverlay.style.display = 'flex';
+                    imgOverlay.addEventListener('click', () => fUpload.click());
+                }
+
+                alert("Admin Mode Enabled: You can now edit the text and image.");
+            } else {
+                alert("Incorrect PIN.");
+            }
+        }
+    </script>
+</body>
+</html>
+```
