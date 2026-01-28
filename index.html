@@ -21,6 +21,7 @@
             </button>
 
             <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
                 <li><a href="#services">Services</a></li>
                 <li><a href="predictor.html">Predictor Tool</a></li>
                 <li><a href="#founder">About</a></li>
@@ -58,6 +59,44 @@
             <div class="trust-item">
                 <span class="trust-icon">⭐</span>
                 <span>Trusted by 500+ Students</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- News / Updates Section (Admin Editable) -->
+    <section id="updates" class="news-section">
+        <div class="container">
+            <h2 class="section-title">Latest Updates</h2>
+            <p class="section-sub">Stay informed with our latest announcements and schedules.</p>
+            
+            <!-- Hidden Inputs for Uploads -->
+            <input type="file" id="news-upload-1" accept="image/*" style="display: none;">
+            <input type="file" id="news-upload-2" accept="image/*" style="display: none;">
+
+            <div class="news-grid">
+                <!-- Slot 1 -->
+                <div class="news-card">
+                    <img id="news-img-1" src="" alt="Update 1" style="display: none;">
+                    <div id="news-placeholder-1" class="news-placeholder">
+                        <i class="fas fa-newspaper" style="font-size: 2rem; margin-bottom: 0.5rem;"></i><br>
+                        News Slot 1
+                    </div>
+                    <div id="news-overlay-1" class="news-overlay">
+                        <i class="fas fa-camera"></i> Upload Image
+                    </div>
+                </div>
+
+                <!-- Slot 2 -->
+                <div class="news-card">
+                    <img id="news-img-2" src="" alt="Update 2" style="display: none;">
+                    <div id="news-placeholder-2" class="news-placeholder">
+                        <i class="fas fa-newspaper" style="font-size: 2rem; margin-bottom: 0.5rem;"></i><br>
+                        News Slot 2
+                    </div>
+                    <div id="news-overlay-2" class="news-overlay">
+                        <i class="fas fa-camera"></i> Upload Image
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -264,6 +303,56 @@
                 if(fImg && data.img) fImg.src = data.img;
             }
 
+            // --- News/Updates Logic ---
+            const news1Img = document.getElementById('news-img-1');
+            const news2Img = document.getElementById('news-img-2');
+            const news1Ph  = document.getElementById('news-placeholder-1');
+            const news2Ph  = document.getElementById('news-placeholder-2');
+            
+            // Load News Data
+            const loadNews = () => {
+                const storedNews = JSON.parse(localStorage.getItem('newsData')) || {};
+                if(storedNews.slot1) {
+                    if(news1Img) { news1Img.src = storedNews.slot1; news1Img.style.display = 'block'; }
+                    if(news1Ph) news1Ph.style.display = 'none';
+                }
+                if(storedNews.slot2) {
+                    if(news2Img) { news2Img.src = storedNews.slot2; news2Img.style.display = 'block'; }
+                    if(news2Ph) news2Ph.style.display = 'none';
+                }
+            };
+            loadNews();
+
+            // Handle News Uploads
+            const handleNewsUpload = (inputId, imgId, phId, slotKey) => {
+                const input = document.getElementById(inputId);
+                const img = document.getElementById(imgId);
+                const ph = document.getElementById(phId);
+                
+                if(input) {
+                    input.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        if(file) {
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                const result = event.target.result;
+                                if(img) { img.src = result; img.style.display = 'block'; }
+                                if(ph) ph.style.display = 'none';
+                                
+                                // Save to storage
+                                const stored = JSON.parse(localStorage.getItem('newsData')) || {};
+                                stored[slotKey] = result;
+                                localStorage.setItem('newsData', JSON.stringify(stored));
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                }
+            };
+
+            handleNewsUpload('news-upload-1', 'news-img-1', 'news-placeholder-1', 'slot1');
+            handleNewsUpload('news-upload-2', 'news-img-2', 'news-placeholder-2', 'slot2');
+
             // Edit Mode Toggle
             if(editBtn) {
                 editBtn.addEventListener('click', () => {
@@ -356,10 +445,18 @@
                 });
                 if(editBtn) editBtn.style.display = 'none';
                 if(saveBtn) saveBtn.style.display = 'inline-block';
+                
                 if(imgOverlay) {
                     imgOverlay.style.display = 'flex';
                     imgOverlay.addEventListener('click', () => fUpload.click());
                 }
+
+                // Enable News Edit Overlays
+                document.getElementById('news-overlay-1').style.display = 'flex';
+                document.getElementById('news-overlay-1').addEventListener('click', () => document.getElementById('news-upload-1').click());
+                
+                document.getElementById('news-overlay-2').style.display = 'flex';
+                document.getElementById('news-overlay-2').addEventListener('click', () => document.getElementById('news-upload-2').click());
 
                 alert("Admin Mode Enabled: You can now edit the text and image.");
             } else {
