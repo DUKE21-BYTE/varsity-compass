@@ -181,7 +181,7 @@
         <div class="container founder-content">
             <div class="founder-image" style="position: relative; cursor: pointer;" title="Click 'Edit Profile' below to change image">
                 <img id="founder-img" src="images/founder_final_4.png" alt="Franklin Bett - Founder" style="border-radius: 50%; border: 4px solid var(--highlight-gold); width: 200px; height: 200px; object-fit: cover; object-position: top;">
-                <div id="img-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); border-radius: 50%; display: none; align-items: center; justify-content: center; color: white;">
+                <div id="img-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); border-radius: 50%; display: none; align-items: center; justify-content: center; color: white; z-index: 100; cursor: pointer;">
                     <i class="fas fa-camera"></i> Change
                 </div>
             </div>
@@ -370,11 +370,16 @@
                         const fUpload = document.getElementById('founder-upload');
                         const imgOverlay = document.getElementById('img-overlay');
 
+                        // Feedback for the user
+                        alert("✅ Editing Enabled!\n\n1. Tap the Name/Bio text to type.\n2. Tap the Profile Photo to change it.");
+
                         [fName, fRole, fBio].forEach(el => {
                             if(el) {
                                 el.contentEditable = "true";
-                                el.style.border = "1px dashed #ccc";
-                                el.style.padding = "5px";
+                                el.style.border = "2px dashed #0D47A1"; // High visibility blue
+                                el.style.borderRadius = "5px";
+                                el.style.padding = "8px";
+                                el.style.backgroundColor = "rgba(13, 71, 161, 0.05)"; // Subtle highlight
                             }
                         });
                         editBtn.style.display = 'none';
@@ -382,7 +387,9 @@
                         
                         if(imgOverlay) {
                             imgOverlay.style.display = 'flex';
-                            imgOverlay.onclick = () => { if(fUpload) fUpload.click(); };
+                            imgOverlay.onclick = () => { 
+                                if(fUpload) fUpload.click(); 
+                            };
                         }
                     };
                 }
