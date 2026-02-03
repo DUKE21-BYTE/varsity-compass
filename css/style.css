@@ -7,6 +7,7 @@
     --text-dark: #212529; /* Sharp Dark Text */
     --text-light: #fff;
     --font-main: 'Poppins', sans-serif;
+    --marquee-speed: 60s; /* Adjustable Marquee Speed */
 }
 
 * {
@@ -435,7 +436,8 @@ body {
 .reviews-track {
     display: flex;
     gap: 2rem;
-    animation: scroll 30s linear infinite;
+    /* Use a variable for sustainability and easier adjustment */
+    animation: scroll var(--marquee-speed, 60s) linear infinite;
     width: max-content;
 }
 
