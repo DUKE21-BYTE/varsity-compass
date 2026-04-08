@@ -76,7 +76,10 @@ function predictCourses(){
     }
 
     if(_res.length===0){
-        h+=`<p style="color:red">No matches found based on 2023 cutoffs.</p>`
+        h+=`<div style="color:#d32f2f;background:#ffebee;padding:15px;border-radius:8px;margin-bottom:15px;text-align:center;font-size:0.9rem;">
+            <strong>No immediate matches found in 2023 data.</strong><br>
+            University cutoffs change annually. A strategy session is required to find your best path for 2024.
+        </div>`;
     }else{
         _res.slice(0,50).forEach(m=>{
             h+=`<div class="course-card" style="border-left:5px solid ${m.c};padding:12px;margin-bottom:10px;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.1);">

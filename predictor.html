@@ -9,6 +9,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Varsity Compass Predictor",
+      "url": "https://varsitycompass.co.ke/predictor.html",
+      "applicationCategory": "EducationalApplication",
+      "description": "Calculate KUCCPS cluster points and find matching university courses."
+    }
+    </script>
 </head>
 <body>
 
@@ -36,7 +46,7 @@
     <section id="predictor" class="predictor-section" style="min-height: 80vh; padding-top: 2rem;">
         <div class="container">
             <div class="tool-header">
-                <h2>The Compass Predictor 2026</h2>
+                <h2>The Compass Predictor 2026/2027</h2>
                 <p>Calculate cluster points for Nursing, Engineering, and more. Find the best courses for your grades instantly with our KUCCPS calculator.</p>
             </div>
             
@@ -108,9 +118,6 @@
                 </div>
             </div>
             <p class="copyright">&copy; 2026 Varsity Compass. All Rights Reserved.</p>
-            <div style="margin-top: 10px; font-size: 0.8rem;">
-                <a href="#" onclick="event.preventDefault(); enableAdminMode();" style="color: rgba(255,255,255,0.3); text-decoration: none;">Admin Login</a>
-            </div>
         </div>
     </footer>
 
@@ -118,6 +125,140 @@
     <div class="mobile-footer">
         <a href="https://wa.me/254746558597?text=I%20want%20to%20book%20a%20session" class="btn-whatsapp-full">Book a Session (WhatsApp)</a>
     </div>
+
+    <!-- Lead Capture Modal -->
+    <div class="lead-modal-overlay" id="leadModalOverlay">
+        <div class="lead-modal">
+            <button class="lead-modal-close" id="leadModalClose">&times;</button>
+            <h3>Before We Proceed 👋</h3>
+            <p>Please share a few details so Franklin can prepare the best strategy for your placement.</p>
+            <form id="leadForm">
+                <div class="lead-form-group">
+                    <label for="leadName">Full Name *</label>
+                    <input type="text" id="leadName" required placeholder="Enter your full name">
+                </div>
+                <div class="lead-form-group" style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <label for="leadLevel">Current Level *</label>
+                        <select id="leadLevel" required>
+                            <option value="">Select...</option>
+                            <option value="High School Graduate (KCSE)">KCSE Graduate</option>
+                            <option value="Current University Student">Current Uni Student</option>
+                            <option value="Parent or Guardian">Parent</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label for="leadGrade">KCSE Grade</label>
+                        <select id="leadGrade">
+                            <option value="">Optional</option>
+                            <option value="A to A-">A or A-</option>
+                            <option value="B+ to B-">B+, B, or B-</option>
+                            <option value="C+">C+</option>
+                            <option value="C and below">C and below</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="lead-form-group">
+                    <label for="leadInterest">What do you need help with? *</label>
+                    <select id="leadInterest" required>
+                        <option value="">Select topic</option>
+                        <option value="Course Selection & Placement">Course Selection & Placement</option>
+                        <option value="University Transfer (IIT)">University Transfer (IIT)</option>
+                        <option value="HEF Funding & Appeals">HEF Funding & Appeals</option>
+                        <option value="General Transition Advice">General Advice</option>
+                    </select>
+                </div>
+                <div class="lead-form-group">
+                    <label for="leadPhone">WhatsApp Number *</label>
+                    <input type="tel" id="leadPhone" required placeholder="Enter your WhatsApp number">
+                </div>
+                <button type="submit" class="lead-btn-submit" id="leadSubmitBtn">
+                    <span>Continue to WhatsApp</span> <i class="fab fa-whatsapp"></i>
+                </button>
+                <div style="font-size: 0.75rem; color: #555; text-align: center; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <i class="fas fa-lock" style="color: #2E7D32;"></i> 100% Privacy Guaranteed. Safe & Secure.
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase specific module for lead capture on predictor page -->
+    <script type="module">
+        import { db, addDoc, collection } from './js/firebase_init.js';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const leadOverlay = document.getElementById('leadModalOverlay');
+            const leadClose = document.getElementById('leadModalClose');
+            const leadForm = document.getElementById('leadForm');
+            const leadSubmitBtn = document.getElementById('leadSubmitBtn');
+            let currentWaLink = "";
+
+            document.body.addEventListener('click', (e) => {
+                const waLink = e.target.closest('a[href*="wa.me"]');
+                if (waLink) {
+                    e.preventDefault();
+                    currentWaLink = waLink.href;
+                    leadOverlay.style.display = 'flex';
+                }
+            });
+
+            if (leadClose) {
+                leadClose.addEventListener('click', () => {
+                    leadOverlay.style.display = 'none';
+                });
+            }
+
+            if (leadForm) {
+                leadForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const name = document.getElementById('leadName').value;
+                    const level = document.getElementById('leadLevel').value;
+                    const grade = document.getElementById('leadGrade').value || "N/A";
+                    const interest = document.getElementById('leadInterest').value;
+                    const phone = document.getElementById('leadPhone').value;
+                    
+                    const originalBtnText = leadSubmitBtn.innerHTML;
+                    leadSubmitBtn.innerHTML = 'Connecting... <i class="fas fa-spinner fa-spin"></i>';
+                    leadSubmitBtn.disabled = true;
+
+                    try {
+                        await addDoc(collection(db, "leads"), {
+                            name: name,
+                            level: level,
+                            grade: grade,
+                            interest: interest,
+                            phone: phone,
+                            sourceUrl: window.location.href,
+                            intendedAction: currentWaLink,
+                            timestamp: new Date().toISOString()
+                        });
+                    } catch (error) {
+                        console.error("Error saving lead:", error);
+                    }
+
+                    let baselink = currentWaLink;
+                    let existingText = "";
+                    if(baselink.includes("?text=")) {
+                        let parts = baselink.split("?text=");
+                        baselink = parts[0];
+                        existingText = decodeURIComponent(parts[1]) + "%0A%0A";
+                    } else {
+                        baselink += "?text=";
+                    }
+
+                    const leadInfo = `Name: ${name}%0ALevel: ${level}%0AGrade: ${grade}%0AInterest: ${interest}%0APhone: ${phone}%0A%0A`;
+                    const finalUrl = baselink + (baselink.endsWith("?text=") ? "" : "?text=") + leadInfo + existingText;
+                    
+                    leadOverlay.style.display = 'none';
+                    leadSubmitBtn.innerHTML = originalBtnText;
+                    leadSubmitBtn.disabled = false;
+                    
+                    window.location.href = finalUrl;
+                });
+            }
+        });
+    </script>
 
     <script src="js/courses_data.js"></script>
     <script src="js/predictor.js"></script>
@@ -131,8 +272,14 @@
                 toggle.addEventListener('click', () => {
                     navLinks.classList.toggle('active');
                     toggle.classList.toggle('active');
-                    // Force display for debugging
-                    console.log('Toggle clicked', navLinks.className);
+                });
+                
+                // Close menu when a link is clicked
+                navLinks.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        navLinks.classList.remove('active');
+                        toggle.classList.remove('active');
+                    });
                 });
             }
 
@@ -260,4 +407,3 @@
     </script>
 </body>
 </html>
-```

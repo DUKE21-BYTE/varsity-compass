@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Varsity Compass</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .admin-container { padding: 3rem 0; min-height: 80vh; }
+        .dashboard-card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 600px; margin: 2rem auto; text-align: center; }
+        .login-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 1.2rem; text-align: center; letter-spacing: 5px; }
+        .leads-table { width: 100%; border-collapse: collapse; margin-top: 2rem; text-align: left; }
+        .leads-table th, .leads-table td { padding: 12px; border-bottom: 1px solid #eee; }
+        .leads-table th { background: #f8f9fa; color: var(--primary-blue); }
+        .status-pill { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; background: #e3f2fd; color: #1565c0; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="logo"><a href="index.html"><img src="images/logo.png" alt="Logo" style="height: 50px;"></a></div>
+            <ul class="nav-links">
+                <li><a href="index.html">View Site</a></li>
+                <li><button id="logout-btn" class="btn btn-outline" style="color: var(--primary-blue); border-color: var(--primary-blue); display:none;">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container admin-container">
+        <!-- Login Section -->
+        <div id="login-section" class="dashboard-card">
+            <h2>Admin Access</h2>
+            <p>Enter your 4-digit security PIN</p>
+            <input type="password" id="pin-input" class="login-input" maxlength="4" placeholder="••••">
+            <button id="login-btn" class="btn btn-primary btn-full">Unlock Dashboard</button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="hidden">
+            <div class="dashboard-card" style="max-width: 900px;">
+                <h2 style="color: var(--primary-blue);">Varsity Compass Dashboard</h2>
+                <div style="display: flex; gap: 1rem; justify-content: center; margin: 1rem 0;">
+                    <a href="index.html?admin=true" class="btn btn-outline" style="border-color: var(--primary-blue); color: var(--primary-blue);">✏️ Edit Home Page</a>
+                    <button id="change-pin-btn" class="btn btn-outline" style="border-color: #d32f2f; color: #d32f2f;">🔒 Change PIN</button>
+                </div>
+
+                <div style="margin-top: 3rem;">
+                    <h3>Recent Leads (Student Inquiries)</h3>
+                    <p style="font-size: 0.9rem; color: #666;">Students who used the Predictor Tool</p>
+                    <div id="leads-list" style="overflow-x: auto;">
+                        <p>Loading leads... <i class="fas fa-spinner fa-spin"></i></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, doc, getDoc, setDoc, collection, getDocs, query, orderBy } from './js/firebase_init.js';
+        
+        const loginSection = document.getElementById('login-section');
+        const dashSection  = document.getElementById('dashboard-section');
+        const pinInput      = document.getElementById('pin-input');
+        const loginBtn      = document.getElementById('login-btn');
+        const logoutBtn     = document.getElementById('logout-btn');
+
+        loginBtn.onclick = async () => {
+             const input = pinInput.value;
+             let storedPin = "1234"; 
+             try {
+                 const snap = await getDoc(doc(db, "cms", "config"));
+                 if(snap.exists() && snap.data().pin) storedPin = snap.data().pin;
+             } catch(e) {}
+
+             if(input === storedPin) {
+                 sessionStorage.setItem('isAdmin', 'true');
+                 showDashboard();
+             } else {
+                 alert("Invalid PIN.");
+             }
+        };
+
+        function showDashboard() {
+            loginSection.classList.add('hidden');
+            dashSection.classList.remove('hidden');
+            if(logoutBtn) logoutBtn.style.display = 'block';
+            fetchLeads();
+        }
+
+        async function fetchLeads() {
+            const leadsContainer = document.getElementById('leads-list');
+            try {
+                const q = query(collection(db, "leads"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    leadsContainer.innerHTML = "<p>No leads recorded yet.</p>";
+                    return;
+                }
+
+                let html = '<table class="leads-table"><thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Level</th><th>Grade</th><th>Interest</th></tr></thead><tbody>';
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const dateObj = new Date(data.timestamp);
+                    const dateStr = isNaN(dateObj) ? "N/A" : dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    html += `<tr>
+                        <td><span class="status-pill">${dateStr}</span></td>
+                        <td><strong>${data.name || 'N/A'}</strong></td>
+                        <td>${data.phone || 'N/A'}</td>
+                        <td>${data.level || 'N/A'}</td>
+                        <td>${data.grade || 'N/A'}</td>
+                        <td>${data.interest || 'N/A'}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                leadsContainer.innerHTML = html;
+            } catch (error) {
+                console.error("Error fetching leads:", error);
+                leadsContainer.innerHTML = `<p style="color:red;">Error loading leads. Check Firebase rules. (${error.message})</p>`;
+            }
+        }
+
+        document.getElementById('change-pin-btn').onclick = async () => {
+            const newPin = prompt("New 4-digit PIN:");
+            if(newPin && newPin.length >= 4) {
+                await setDoc(doc(db, "cms", "config"), { pin: newPin }, { merge: true });
+                alert("PIN Updated Securely!");
+            }
+        };
+
+        if(logoutBtn) logoutBtn.onclick = () => {
+            sessionStorage.removeItem('isAdmin');
+            location.reload();
+        };
+
+        // Check session
+        if(sessionStorage.getItem('isAdmin') === 'true') showDashboard();
+    </script>
+</body>
+</html>
